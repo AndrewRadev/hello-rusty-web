@@ -9,7 +9,6 @@ pub fn hello_web(state: State) -> (State, &'static str) {
 fn router() -> Router {
     build_simple_router(|route| {
         route.get("/").to(hello_web);
-        // route.get("/foo").to(hello_web);
     })
 }
 
