@@ -1,6 +1,6 @@
 use actix_web::{web, App, HttpRequest, HttpServer, HttpResponse};
 
-async fn hello_web(_req: HttpRequest) -> HttpResponse {
+async fn hello_web(_request: HttpRequest) -> HttpResponse {
     HttpResponse::Ok().body("Hello, Web!")
 }
 

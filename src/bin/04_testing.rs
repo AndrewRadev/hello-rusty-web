@@ -55,30 +55,39 @@ mod tests {
     use super::*;
     use actix_web::test::{self, TestRequest};
 
-    #[actix_rt::test]
-    async fn test_hello_name_integration() {
+    async fn perform_get_request(uri: &str) -> (http::StatusCode, String) {
         let mut app_service = test::init_service(build_app!()).await;
         let request = TestRequest::get().
             header("content-type", "text/plain").
-            uri("/Pesho").
+            uri(uri).
             to_request();
         let response = test::call_service(&mut app_service, request).await;
 
-        assert!(response.status().is_success());
+        let status = response.status();
 
         let body = test::read_body(response).await;
-        assert!(String::from_utf8(body.to_vec()).unwrap().contains("Hello, <u>Pesho</u>!"));
+        let body = String::from_utf8(body.to_vec()).unwrap();
+
+        (status, body)
+    }
+
+    #[actix_rt::test]
+    async fn test_hello_name_integration() {
+        let (status, body) = perform_get_request("/Pesho").await;
+
+        assert!(status.is_success());
+        assert!(body.contains("Hello, <u>Pesho</u>!"));
+
+        let (status, body) = perform_get_request("/Gosho").await;
+
+        assert!(status.is_success());
+        assert!(body.contains("Hello, <u>Gosho</u>!"));
     }
 
     #[actix_rt::test]
     async fn test_unknown_url() {
-        let mut app_service = test::init_service(build_app!()).await;
-        let request = TestRequest::get().
-            header("content-type", "text/plain").
-            uri("/something/unknown").
-            to_request();
-        let response = test::call_service(&mut app_service, request).await;
+        let (status, _) = perform_get_request("/unknown/path").await;
 
-        assert_eq!(response.status(), http::StatusCode::NOT_FOUND);
+        assert_eq!(status, http::StatusCode::NOT_FOUND);
     }
 }
