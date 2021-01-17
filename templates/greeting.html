@@ -1,0 +1,18 @@
+<html charset="utf-8">
+  <head>
+    <meta charset="utf-8" />
+
+    <title>{{greeting}}, {{ name }}</title>
+  </head>
+
+  <body>
+    <h1>{{greeting}}, <u>{{ name }}</u>!</h1>
+    <h2>
+      Isn't it a beautiful {{ day_of_week }}?
+
+      {% if visit_count > 1 %}
+        (We've already asked you this question {{ visit_count }} times lol)
+      {% endif %}
+    </h2>
+  </body>
+</html>

@@ -9,3 +9,4 @@ A simple example is built-up in multiple steps:
 - [Step 2: Hello, {name}](src/bin/02_name.rs): Use a path parameter to modify response. Some testing
 - [Step 3: A template](src/bin/03_html.rs): HTML template with some more dynamic content.
 - [Step 4: Testing](src/bin/04_testing.rs): Some more testing with a reusable helper.
+- [Step 5: Polish](src/bin/05_polish.rs): Some nice-to-haves like logging, a session, static files.
