@@ -57,6 +57,11 @@ async fn render_404() -> Result<NamedFile> {
     Ok(file.set_status_code(StatusCode::NOT_FOUND))
 }
 
+async fn render_admin() -> Result<NamedFile> {
+    let file = NamedFile::open("static/admin.html")?;
+    Ok(file)
+}
+
 const SESSION_SECRET: &[u8; 32] = b"6d10a2873e2c4a2282eecd2d1aa3471e";
 
 macro_rules! build_app {
@@ -67,6 +72,7 @@ macro_rules! build_app {
             service(Files::new("/static", "static").show_files_listing()).
             service(hello_web).
             service(greeting).
+            route("/admin", web::get().to(render_admin)).
             default_service(
                 web::resource("").
                 route(web::get().to(render_404)).
