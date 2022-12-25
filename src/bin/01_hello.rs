@@ -4,7 +4,7 @@ async fn hello_web(_request: HttpRequest) -> HttpResponse {
     HttpResponse::Ok().body("Hello, Web!")
 }
 
-#[actix_rt::main]
+#[actix_web::main]
 async fn main() -> std::io::Result<()> {
     let addr = "127.0.0.1:7000";
     println!("Listening for requests at http://{}", addr);

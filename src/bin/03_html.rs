@@ -13,7 +13,7 @@ async fn hello_web(_request: HttpRequest) -> HttpResponse {
     HttpResponse::Ok().body("Hello, Web!")
 }
 
-pub fn hello_name(request: HttpRequest) -> HttpResponse {
+pub async fn hello_name(request: HttpRequest) -> HttpResponse {
     let template = HelloNameTemplate {
         name:        request.match_info().get("name").unwrap(),
         day_of_week: Local::now().format("%A").to_string(),
@@ -40,7 +40,7 @@ macro_rules! build_app {
     }
 }
 
-#[actix_rt::main]
+#[actix_web::main]
 async fn main() -> std::io::Result<()> {
     let addr = "127.0.0.1:7000";
     println!("Listening for requests at http://{}", addr);
@@ -55,11 +55,11 @@ mod tests {
     use super::*;
     use actix_web::test::{self, TestRequest};
 
-    #[actix_rt::test]
+    #[actix_web::test]
     async fn test_hello_name_integration() {
         let mut app_service = test::init_service(build_app!()).await;
         let request = TestRequest::get().
-            header("content-type", "text/plain").
+            insert_header(("content-type", "text/plain")).
             uri("/Pesho").
             to_request();
         let response = test::call_service(&mut app_service, request).await;
@@ -70,11 +70,11 @@ mod tests {
         assert!(String::from_utf8(body.to_vec()).unwrap().contains("Hello, <u>Pesho</u>!"));
     }
 
-    #[actix_rt::test]
+    #[actix_web::test]
     async fn test_unknown_url() {
         let mut app_service = test::init_service(build_app!()).await;
         let request = TestRequest::get().
-            header("content-type", "text/plain").
+            insert_header(("content-type", "text/plain")).
             uri("/something/unknown").
             to_request();
         let response = test::call_service(&mut app_service, request).await;

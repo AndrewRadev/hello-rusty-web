@@ -4,7 +4,7 @@ async fn hello_web(_request: HttpRequest) -> HttpResponse {
     HttpResponse::Ok().body("Hello, Web!")
 }
 
-pub fn hello_name(request: HttpRequest) -> HttpResponse {
+pub async fn hello_name(request: HttpRequest) -> HttpResponse {
     let name = request.match_info().get("name").unwrap();
     let greeting = format!("Hello, {}!", name);
 
@@ -19,7 +19,7 @@ macro_rules! build_app {
     }
 }
 
-#[actix_rt::main]
+#[actix_web::main]
 async fn main() -> std::io::Result<()> {
     let addr = "127.0.0.1:7000";
     println!("Listening for requests at http://{}", addr);
@@ -34,22 +34,22 @@ mod tests {
     use super::*;
     use actix_web::test::{self, TestRequest};
 
-    #[actix_rt::test]
+    #[actix_web::test]
     async fn test_hello_name_unit() {
         let request = TestRequest::get().
-            header("content-type", "text/plain").
+            insert_header(("content-type", "text/plain")).
             param("name", "Pesho").
             to_http_request();
-        let response = hello_name(request).await.unwrap();
+        let response = hello_name(request).await;
 
         assert_eq!(response.status(), http::StatusCode::OK);
     }
 
-    #[actix_rt::test]
+    #[actix_web::test]
     async fn test_hello_name_integration() {
         let mut app_service = test::init_service(build_app!()).await;
         let request = TestRequest::get().
-            header("content-type", "text/plain").
+            insert_header(("content-type", "text/plain")).
             uri("/Pesho").
             to_request();
         let response = test::call_service(&mut app_service, request).await;

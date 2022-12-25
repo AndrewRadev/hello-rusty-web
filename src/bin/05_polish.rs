@@ -1,11 +1,26 @@
 use std::collections::HashMap;
 
 use actix_files::{NamedFile, Files};
-use actix_session::{CookieSession, Session};
+use actix_session::{
+    Session,
+    SessionMiddleware,
+    storage::CookieSessionStore,
+    config::CookieContentSecurity,
+};
 use actix_web::error::InternalError;
 use actix_web::http::StatusCode;
 use actix_web::middleware::Logger;
-use actix_web::{web, get, guard, App, HttpRequest, HttpServer, HttpResponse, Result};
+use actix_web::cookie::Key;
+use actix_web::{
+    web,
+    get,
+    App,
+    HttpRequest,
+    HttpServer,
+    HttpResponse,
+    Result,
+    Responder,
+};
 use askama::Template;
 use chrono::Local;
 use env_logger::{self, Env};
@@ -29,13 +44,13 @@ async fn greeting(
     path:    web::Path<(String, String)>,
     session: Session,
 ) -> Result<HttpResponse> {
-    let web::Path((greeting, name)) = path;
+    let (greeting, name) = path.into_inner();
     let mut counter = session.get::<HashMap<String, u32>>("counter")?.
         unwrap_or_else(HashMap::new);
 
     (*counter.entry(name.clone()).or_insert(0) += 1);
     let visit_count = counter[&name];
-    session.set("counter", counter)?;
+    session.insert("counter", counter)?;
 
     let template = GreetingTemplate {
         greeting, name, visit_count,
@@ -52,9 +67,9 @@ async fn greeting(
     Ok(response)
 }
 
-async fn render_404() -> Result<NamedFile> {
+async fn render_404(request: HttpRequest) -> Result<impl Responder> {
     let file = NamedFile::open("static/404.html")?;
-    Ok(file.set_status_code(StatusCode::NOT_FOUND))
+    Ok(file.customize().with_status(StatusCode::NOT_FOUND).respond_to(&request))
 }
 
 async fn render_admin() -> Result<NamedFile> {
@@ -62,30 +77,34 @@ async fn render_admin() -> Result<NamedFile> {
     Ok(file)
 }
 
-const SESSION_SECRET: &[u8; 32] = b"6d10a2873e2c4a2282eecd2d1aa3471e";
+const SESSION_SECRET: &[u8; 64] = b"6d10a2873e2c4a2282eecd2d1aa3471e6d10a2873e2c4a2282eecd2d1aa3471e";
 
 macro_rules! build_app {
     () => {
-        App::new().
-            wrap(Logger::default()).
-            wrap(CookieSession::private(SESSION_SECRET).secure(true)).
-            service(Files::new("/static", "static").show_files_listing()).
-            service(hello_web).
-            service(greeting).
-            route("/admin", web::get().to(render_admin)).
-            default_service(
-                web::resource("").
-                route(web::get().to(render_404)).
-                route(
-                    web::route().
-                    guard(guard::Not(guard::Get())).
-                    to(HttpResponse::MethodNotAllowed),
-                ),
-            )
+        {
+            let session_middleware =
+                SessionMiddleware::builder(
+                    CookieSessionStore::default(),
+                    Key::from(SESSION_SECRET),
+                ).
+                cookie_name(String::from("hello-web")).
+                cookie_secure(true).
+                cookie_content_security(CookieContentSecurity::Private).
+                build();
+
+            App::new().
+                wrap(Logger::default()).
+                wrap(session_middleware).
+                service(Files::new("/static", "static").show_files_listing()).
+                service(hello_web).
+                service(greeting).
+                route("/admin", web::get().to(render_admin)).
+                default_service(web::get().to(render_404))
+        }
     }
 }
 
-#[actix_rt::main]
+#[actix_web::main]
 async fn main() -> std::io::Result<()> {
     let addr = "127.0.0.1:7000";
     println!("Listening for requests at http://{}", addr);
@@ -106,7 +125,7 @@ mod tests {
     async fn perform_get_request(uri: &str) -> (http::StatusCode, String) {
         let mut app_service = test::init_service(build_app!()).await;
         let request = TestRequest::get().
-            header("content-type", "text/plain").
+            insert_header(("content-type", "text/plain")).
             uri(uri).
             to_request();
         let response = test::call_service(&mut app_service, request).await;
@@ -119,7 +138,7 @@ mod tests {
         (status, body)
     }
 
-    #[actix_rt::test]
+    #[actix_web::test]
     async fn test_hello_name_with_ascii() {
         let (status, body) = perform_get_request("/Hello/Pesho").await;
 
@@ -132,7 +151,7 @@ mod tests {
         assert!(body.contains("Greetings, <u>Penka</u>!"));
     }
 
-    #[actix_rt::test]
+    #[actix_web::test]
     async fn test_hello_name_with_unicode() {
         let url = Url::parse("http://test.host/Здравей/Тинчо").unwrap();
         let (status, body) = perform_get_request(url.path()).await;
@@ -141,14 +160,14 @@ mod tests {
         assert!(body.contains("Здравей, <u>Тинчо</u>!"));
     }
 
-    #[actix_rt::test]
+    #[actix_web::test]
     async fn test_unknown_url() {
         let (status, _) = perform_get_request("/some/unknown/path").await;
 
         assert_eq!(status, http::StatusCode::NOT_FOUND);
     }
 
-    #[actix_rt::test]
+    #[actix_web::test]
     async fn test_session_counter() {
         // ??? :/
         //
