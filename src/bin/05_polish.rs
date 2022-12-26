@@ -68,12 +68,15 @@ async fn greeting(
 }
 
 async fn render_404(request: HttpRequest) -> Result<impl Responder> {
-    let file = NamedFile::open("static/404.html")?;
+    // let file = file.set_status_code(StatusCode::NOT_FOUND);
+    // Ok(file)
+
+    let file = NamedFile::open_async("static/404.html").await?;
     Ok(file.customize().with_status(StatusCode::NOT_FOUND).respond_to(&request))
 }
 
 async fn render_admin() -> Result<NamedFile> {
-    let file = NamedFile::open("static/admin.html")?;
+    let file = NamedFile::open_async("static/admin.html").await?;
     Ok(file)
 }
 
