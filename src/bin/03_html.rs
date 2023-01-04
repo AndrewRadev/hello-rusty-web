@@ -13,7 +13,7 @@ async fn hello_web(_request: HttpRequest) -> HttpResponse {
     HttpResponse::Ok().body("Hello, Web!")
 }
 
-pub async fn hello_name(request: HttpRequest) -> HttpResponse {
+async fn hello_name(request: HttpRequest) -> HttpResponse {
     let template = HelloNameTemplate {
         name:        request.match_info().get("name").unwrap(),
         day_of_week: Local::now().format("%A").to_string(),
