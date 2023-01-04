@@ -14,4 +14,6 @@ askama = "0.11.1"
 chrono = "0.4.23"
 http = "0.2.8"
 env_logger = "0.10.0"
+
+[dev-dependencies]
 url = "2.3.1"

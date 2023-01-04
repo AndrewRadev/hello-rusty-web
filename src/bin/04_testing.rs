@@ -57,10 +57,7 @@ mod tests {
 
     async fn perform_get_request(uri: &str) -> (http::StatusCode, String) {
         let mut app_service = test::init_service(build_app!()).await;
-        let request = TestRequest::get().
-            insert_header(("content-type", "text/plain")).
-            uri(uri).
-            to_request();
+        let request = TestRequest::with_uri(uri).to_request();
         let response = test::call_service(&mut app_service, request).await;
 
         let status = response.status();

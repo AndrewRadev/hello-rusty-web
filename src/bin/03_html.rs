@@ -59,7 +59,7 @@ mod tests {
     async fn test_hello_name_integration() {
         let mut app_service = test::init_service(build_app!()).await;
         let request = TestRequest::get().
-            insert_header(("content-type", "text/plain")).
+            insert_header(("content-type", "text/html")).
             uri("/Pesho").
             to_request();
         let response = test::call_service(&mut app_service, request).await;
@@ -74,7 +74,7 @@ mod tests {
     async fn test_unknown_url() {
         let mut app_service = test::init_service(build_app!()).await;
         let request = TestRequest::get().
-            insert_header(("content-type", "text/plain")).
+            insert_header(("content-type", "text/html")).
             uri("/something/unknown").
             to_request();
         let response = test::call_service(&mut app_service, request).await;
